@@ -1,3 +1,4 @@
+// Package bits implements bit manipulation functions for the integer type
 package bits
 
 import "fmt"
