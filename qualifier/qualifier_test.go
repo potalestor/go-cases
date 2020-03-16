@@ -31,3 +31,27 @@ func TestDetermine(t *testing.T) {
 		})
 	}
 }
+
+func TestFormatString(t *testing.T) {
+	tests := []struct {
+		f    Format
+		want string
+	}{
+		{LDN, "LegacyDomainName"},
+		{FQDN, "Fully Qualified Domain Name"},
+		{UPN, "User Principal Name"},
+		{DN, "Distinguished Name"},
+		{CNAME, "Canonical Name"},
+		{Display, "Display"},
+		{GUID, "GUID"},
+		{SID, "SID"},
+		{100, "Unknown"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.want, func(t *testing.T) {
+			if got := tt.f.String(); got != tt.want {
+				t.Errorf("Format.String() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
