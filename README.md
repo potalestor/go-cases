@@ -1,4 +1,4 @@
-# golang-snippets
+# golang-cases
 
 [Implementation bit manipulation functions for the integer type](./bits/bits.go)
 
