@@ -41,6 +41,7 @@ func newErrCapturer(cmd *exec.Cmd) *errCapturer {
 	return c
 }
 
+// Bytes ...
 func (c *errCapturer) Bytes() []byte {
 	data := cp866Decode(c.capturer.Buffer.Bytes())
 	var e Error
