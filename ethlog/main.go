@@ -76,6 +76,11 @@ func CbgColorFormat(r *log.Record) []byte {
 	return buf.Bytes()
 }
 
+// FilterErrLvlUp - выводить только ошибки и выше
+func FilterErrLvlUp(r *log.Record) bool {
+	return r.Lvl <= log.LvlError
+}
+
 // Rfc5424Format - форматированный вывод в syslog
 func Rfc5424Format(r *log.Record) []byte {
 	buf := bytes.NewBuffer(nil)
@@ -92,6 +97,7 @@ func main() {
 
 	// вывод в syslog в формате Rfc5424
 	syslogHandler, _ := log.SyslogHandler(syslog.LOG_USER, "cbg", log.FormatFunc(Rfc5424Format))
+	syslogHandler = log.FilterHandler(FilterErrLvlUp, syslogHandler)
 	// вывод в консоль в цвете
 	consoleHandler := log.StreamHandler(os.Stdout, log.FormatFunc(CbgColorFormat))
 
