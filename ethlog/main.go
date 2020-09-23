@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/log"
+	"gopkg.in/natefinch/lumberjack.v2"
 )
 
 var endpoints = []string{
@@ -88,10 +89,27 @@ func Rfc5424Format(r *log.Record) []byte {
 }
 
 func main() {
+
 	// вывод в syslog в формате Rfc5424
 	syslogHandler, _ := log.SyslogHandler(syslog.LOG_USER, "cbg", log.FormatFunc(Rfc5424Format))
 	// вывод в консоль в цвете
 	consoleHandler := log.StreamHandler(os.Stdout, log.FormatFunc(CbgColorFormat))
+
+	if err := os.MkdirAll("/var/log/tf", os.ModePerm); err != nil {
+		panic(err)
+	}
+
+	// ротация файла
+	fileWithRotateHandler := log.StreamHandler(&lumberjack.Logger{
+		Filename:   "/var/log/tf/cbg_rotate.log",
+		MaxSize:    1, // megabytes
+		MaxBackups: 3,
+		MaxAge:     28,   //days
+		Compress:   true, // disabled by default
+	},
+		log.FormatFunc(CbgFormat),
+	)
+
 	// вывод в файл в формате Cbg
 	fileHandler, err := log.FileHandler("/var/log/tf/cbg.log", log.FormatFunc(CbgFormat))
 	if err != nil {
@@ -103,6 +121,7 @@ func main() {
 			consoleHandler,
 			syslogHandler,
 			fileHandler,
+			fileWithRotateHandler,
 		))
 
 	SimulateCallingEnpoints(endpoints)
@@ -126,78 +145,3 @@ func SimulateCallingEnpoints(e []string) {
 		}(i)
 	}
 }
-
-// import (
-// 	"bytes"
-// 	"fmt"
-// 	"log/syslog"
-// 	"math"
-// 	"math/rand"
-// 	"os"
-// 	"runtime"
-// 	"sync"
-// 	"time"
-
-// 	"github.com/ethereum/go-ethereum/log"
-// )
-
-// var l log.Logger
-
-// func parallel(n int) {
-// 	var wg sync.WaitGroup
-// 	wg.Add(n)
-// 	defer wg.Wait()
-
-// 	for i := 0; i < n; i++ {
-// 		go func() {
-// 			defer wg.Done()
-// 			span := rand.Intn(10)
-// 			for {
-// 				b := math.MaxUint64 / (uint64(span) + 2)
-// 				if b <= 100 {
-// 					break
-// 				}
-// 				// l.Info(strconv.Itoa(10), "span", span)
-// 				// time.Sleep(time.Microsecond * time.Duration(rand.Intn(100)))
-// 			}
-// 		}()
-// 	}
-// }
-
-// // FormatSpan ...
-// func FormatSpan(r *log.Record) []byte {
-// 	buf := bytes.NewBuffer(nil)
-// 	fmt.Fprintf(buf, "[%v] %v %v: %s\n", r.Lvl, r.Ctx[3], r.Time.Format("15:04:05"), r.Msg)
-// 	return buf.Bytes()
-// }
-
-// // FormatSyslog ...
-// func FormatSyslog(r *log.Record) []byte {
-// 	buf := bytes.NewBuffer(nil)
-// 	fmt.Fprintf(buf, "[%v=%v] %s\n", r.Ctx[2], r.Ctx[3], r.Msg)
-// 	return buf.Bytes()
-// }
-
-// func Metrics() {
-// 	span := rand.Intn(10)
-
-// 	for {
-// 		l.Info(fmt.Sprintf("CPU: %v GOROUT: %v", runtime.NumCPU(), runtime.NumGoroutine()), "span", span)
-// 		time.Sleep(time.Second)
-// 	}
-// }
-
-// func main() {
-// 	runtime.GOMAXPROCS(1)
-
-// 	l = log.New("app", "cbg")
-// 	h, _ := log.SyslogHandler(syslog.LOG_USER, "cbg", log.FormatFunc(FormatSyslog))
-// 	l.SetHandler(log.MultiHandler(
-// 		log.StreamHandler(os.Stdout, log.FormatFunc(FormatSpan)),
-// 		h,
-// 	),
-// 	)
-// 	go Metrics()
-
-// 	parallel(30)
-// }
